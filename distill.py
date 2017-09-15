@@ -9,8 +9,8 @@ def fc_layer(inp, size, name):
     tf.histogram_summary(name + "_weights", W_layer)
     return res, [W_layer, b_layer]
 
-def fully_connected(name):
-    L1, fc_params1 = fc_layer(tf.reshape(X, [-1,784]) , 100, name + "L1")
+def fully_connected(name,num_hidden_layer):
+    L1, fc_params1 = fc_layer(tf.reshape(X, [-1,784]) , num_hidden_layer, name + "L1")
     L1a = tf.nn.sigmoid(L1)
     res, fc_params2 = fc_layer(L1a , 10, name + "L2")
     return tf.nn.softmax((1.0/T) * res), fc_params1 + fc_params2
@@ -35,7 +35,6 @@ def distillate(net_name):
         tf.initialize_all_variables().run()
 
         # Donor loading
-        print(donor_params)
         donor_saver = tf.train.Saver(donor_params)
         donor_saver.restore(sess, 'checkpoints/' + donor_name)
 
@@ -113,9 +112,9 @@ if __name__ == "__main__":
     batch_size = 128
     test_size = 1000
 
-    donor_name = "l2_full-1000"
-    acceptor_name = "distil_comb_L3"
-    train_output_name = "L4"
+    donor_name = "mnist-std-1000"
+    acceptor_name = "distil_n1"
+    #train_output_name = "trained_n1"
 
     X = tf.placeholder("float", [None, 28, 28, 1])
     Y = tf.placeholder("float", [None, 10])
@@ -127,8 +126,8 @@ if __name__ == "__main__":
 
     # donor & acceptor networks
 
-    y_donor, donor_params = fully_connected(donor_name)
-    y_acceptor, acceptor_params = fully_connected(acceptor_name)
+    y_donor, donor_params = fully_connected(donor_name,1200)
+    y_acceptor, acceptor_params = fully_connected(acceptor_name,800)
 
     # distillation
     distill_ent = tf.reduce_mean( - tf.reduce_sum(tf.stop_gradient(y_donor) * tf.log(y_acceptor), reduction_indices=1))
@@ -147,4 +146,6 @@ if __name__ == "__main__":
     train_step = tf.train.GradientDescentOptimizer(0.1).minimize(train_cross_ent)
 
     distillate(acceptor_name)
-    train_net(train_step, train_prec, acceptor_params, train_output_name)
+    #train_net(train_step, train_prec, acceptor_params, train_output_name)
+
+    #TODO: Initialize large' from acceptor + random weights. Train. Distill to small'

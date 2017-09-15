@@ -1,7 +1,7 @@
 import tensorflow as tf
 from tensorflow.examples.tutorials.mnist import input_data
 
-net_name = "std-0.1"
+net_name = "mnist-std"
 floatX = tf.float32
 
 x = tf.placeholder(floatX, [None, 784])
@@ -14,7 +14,7 @@ def layer(inp, size, name):
     tf.histogram_summary(name + "_weights", W_layer)
     return res
 
-L1 = tf.nn.sigmoid( layer(x, 100, "L1") )
+L1 = tf.nn.sigmoid( layer(x, 1200, "L1") )
 y = tf.nn.softmax( layer(L1, 10, "L2") )
 
 cross_ent = tf.reduce_mean( - tf.reduce_sum(y_true * tf.log(y), reduction_indices=1))
@@ -36,8 +36,9 @@ mnist = input_data.read_data_sets("MNIST_data", one_hot=True)
 sess.run(init)
 
 sav = tf.train.Saver()
+#sav.restore(sess,"checkpoints/mnist-std-3000")
 
-for i in range(1001):
+for i in range(5001):
     batch_xs,batch_ys = mnist.train.next_batch(100)
     tlog, _ = sess.run([merged, step], feed_dict= {x: batch_xs, y_true: batch_ys})
     train_writer.add_summary(tlog, i)
@@ -47,6 +48,5 @@ for i in range(1001):
         test_writer.add_summary(log2, i)
         print(i, train_acc, test_acc)
     if i % 500 == 0:
-        sav.save(sess, "checkpoints/l2_full", global_step = i)
-
+        sav.save(sess, "checkpoints/" + net_name, global_step = i)
 
